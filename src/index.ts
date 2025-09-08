@@ -7,6 +7,43 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { fal } from "@fal-ai/client";
+import * as fs from "fs";
+import * as path from "path";
+import { promisify } from "util";
+import { pipeline } from "stream";
+import fetch from "node-fetch";
+
+const streamPipeline = promisify(pipeline);
+
+// Helper function to download image
+async function downloadImage(url: string, outputDir: string = process.cwd()): Promise<string> {
+  try {
+    // Create images directory if it doesn't exist
+    const imagesDir = path.join(outputDir, "fal-images");
+    if (!fs.existsSync(imagesDir)) {
+      fs.mkdirSync(imagesDir, { recursive: true });
+    }
+    
+    // Generate filename from URL or timestamp
+    const urlParts = url.split("/");
+    const originalName = urlParts[urlParts.length - 1];
+    const timestamp = new Date().getTime();
+    const filename = `${timestamp}-${originalName}`;
+    const filepath = path.join(imagesDir, filename);
+    
+    // Download the image
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Failed to download: ${response.statusText}`);
+    
+    const fileStream = fs.createWriteStream(filepath);
+    await streamPipeline(response.body, fileStream);
+    
+    return filepath;
+  } catch (error) {
+    console.error(`Failed to download image: ${error}`);
+    throw error;
+  }
+}
 
 // Configure Fal.ai client
 const FAL_KEY = process.env.FAL_KEY;
@@ -23,6 +60,7 @@ const GenerateImageSchema = z.object({
   image_size: z.enum(["square", "landscape_4_3", "portrait_3_4"]).default("landscape_4_3").optional(),
   num_images: z.number().min(1).max(4).default(1).optional(),
   seed: z.number().optional(),
+  download_images: z.boolean().default(true).optional().describe("Whether to download images locally"),
 });
 
 const RunModelSchema = z.object({
@@ -195,17 +233,39 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const images = (result as any).images || [];
         let responseText = `✅ Generated ${images.length} image(s) successfully!\n\n`;
         
-        images.forEach((img: any, idx: number) => {
+        // Download images locally if requested
+        const downloadedPaths: string[] = [];
+        const shouldDownload = params.download_images !== false;
+        
+        for (let idx = 0; idx < images.length; idx++) {
+          const img = images[idx];
           responseText += `Image ${idx + 1}:\n`;
-          responseText += `URL: ${img.url}\n`;
+          
+          if (shouldDownload) {
+            try {
+              const localPath = await downloadImage(img.url);
+              downloadedPaths.push(localPath);
+              responseText += `📁 Saved to: ${localPath}\n`;
+            } catch (error: any) {
+              responseText += `⚠️ Download failed: ${error.message}\n`;
+            }
+          }
+          
+          responseText += `🌐 URL: ${img.url}\n`;
           if (img.width && img.height) {
-            responseText += `Size: ${img.width}x${img.height}\n`;
+            responseText += `📐 Size: ${img.width}x${img.height}\n`;
           }
           responseText += `\n`;
-        });
+        }
         
         if ((result as any).seed) {
-          responseText += `Seed: ${(result as any).seed}\n`;
+          responseText += `🎲 Seed: ${(result as any).seed}\n`;
+        }
+        
+        if (downloadedPaths.length > 0) {
+          responseText += `\n📂 Images saved to: ${path.join(process.cwd(), "fal-images")}/\n`;
+        } else if (shouldDownload && images.length > 0) {
+          responseText += `\n💡 Tip: Images URLs are temporary. Save them soon if needed.\n`;
         }
         
         return {
