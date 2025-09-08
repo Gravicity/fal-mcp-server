@@ -1,0 +1,39 @@
+{
+  "name": "fal-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server for Fal.ai image generation and AI models",
+  "main": "dist/index.js",
+  "bin": {
+    "fal-mcp-server": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "dev": "node dist/index.js",
+    "link": "npm link",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "fal",
+    "ai",
+    "image-generation",
+    "flux",
+    "stable-diffusion"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@fal-ai/client": "^1.6.2",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
