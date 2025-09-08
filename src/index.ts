@@ -191,11 +191,28 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           },
         });
 
+        // Format the response nicely
+        const images = (result as any).images || [];
+        let responseText = `✅ Generated ${images.length} image(s) successfully!\n\n`;
+        
+        images.forEach((img: any, idx: number) => {
+          responseText += `Image ${idx + 1}:\n`;
+          responseText += `URL: ${img.url}\n`;
+          if (img.width && img.height) {
+            responseText += `Size: ${img.width}x${img.height}\n`;
+          }
+          responseText += `\n`;
+        });
+        
+        if ((result as any).seed) {
+          responseText += `Seed: ${(result as any).seed}\n`;
+        }
+        
         return {
           content: [
             {
               type: "text",
-              text: JSON.stringify(result, null, 2),
+              text: responseText,
             },
           ],
         };
@@ -319,11 +336,18 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           },
         ];
 
+        let modelList = "📋 Popular Fal.ai Models:\n\n";
+        models.forEach((model) => {
+          modelList += `• ${model.name}\n`;
+          modelList += `  ID: ${model.id}\n`;
+          modelList += `  ${model.description}\n\n`;
+        });
+        
         return {
           content: [
             {
               type: "text",
-              text: JSON.stringify(models, null, 2),
+              text: modelList,
             },
           ],
         };
