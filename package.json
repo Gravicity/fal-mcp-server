@@ -22,8 +22,16 @@
     "flux",
     "stable-diffusion"
   ],
-  "author": "",
+  "author": "Gravicity",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Gravicity/fal-mcp-server.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Gravicity/fal-mcp-server/issues"
+  },
+  "homepage": "https://github.com/Gravicity/fal-mcp-server#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
     "@fal-ai/client": "^1.6.2",
