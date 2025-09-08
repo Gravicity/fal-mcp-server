@@ -31,12 +31,17 @@ async function downloadImage(url: string, outputDir: string = process.cwd()): Pr
     const filename = `${timestamp}-${originalName}`;
     const filepath = path.join(imagesDir, filename);
     
-    // Download the image
+    // Download the image using buffer approach
     const response = await fetch(url);
     if (!response.ok) throw new Error(`Failed to download: ${response.statusText}`);
     
-    const fileStream = fs.createWriteStream(filepath);
-    await streamPipeline(response.body, fileStream);
+    const buffer = await response.buffer();
+    fs.writeFileSync(filepath, buffer);
+    
+    // Verify the file was created
+    if (!fs.existsSync(filepath)) {
+      throw new Error("File was not created successfully");
+    }
     
     return filepath;
   } catch (error) {

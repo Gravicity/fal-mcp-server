@@ -6,3 +6,5 @@ dist/
 *.local
 coverage/
 .nyc_output/
+fal-images/
+test-download/
